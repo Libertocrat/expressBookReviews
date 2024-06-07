@@ -4,6 +4,23 @@ let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
+/*** PROMISES ***/
+
+// Retrieve all books from the database, as an asyncronous function
+const getAllBooks = new Promise((resolve, reject) => {
+
+    // Return all books if database is valid
+    try {
+        const allBooks = books;
+        resolve(allBooks);
+    }
+    catch (error) {
+        reject(error);
+    }
+    
+});
+
+/*** ROUTES ***/
 
 public_users.post("/register", (req,res) => {
 
@@ -36,10 +53,21 @@ public_users.post("/register", (req,res) => {
     
 });
 
-// Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  // Return all books in database
-  return res.status(200).json({books: books});
+// Get the book list available in the shop asyncronously
+public_users.get('/', async function (req, res) {
+
+    try {
+        // Call & await the Promise to get all books, to avoid blocking
+        let allBooks = await getAllBooks;
+
+        // Return all books in database once the Promise has resolved
+        return res.status(200).json({books: allBooks});
+    }
+    catch(error) {
+        // "500 Internal Server Error" if the Promise throws an error
+        return res.status(500).json(`An error has ocurred: '${error}'.`);
+    }
+  
 });
 
 // Get book details based on ISBN
