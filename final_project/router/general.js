@@ -38,16 +38,46 @@ public_users.get('/author/:author',function (req, res) {
     // Parse requested author
     const author = req.params.author;
 
-    // Extract just the books with the requested author
-    let filteredBooks = Object.values(books).filter((book) => book.author === author);
+    // Array of books having the requested author
+    let booksByAuthor = [];
 
-    return res.status(200).json({booksbyauthor: filteredBooks});
+    for (const [isbn, book] of Object.entries(books)) {
+
+        // Add just the books with the requested author
+        if(book.author === author) {
+            booksByAuthor.push({
+                isbn: isbn,
+                title: book.title,
+                reviews: book.reviews
+            });
+        }
+    }
+
+    return res.status(200).json({booksbyauthor: booksByAuthor});
 });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  
+    // Parse requested title
+    const title = req.params.title;
+
+    // Array of books having the requested title
+    let booksByTitle = [];
+
+    for (const [isbn, book] of Object.entries(books)) {
+
+        // Add just the books with the requested title
+        if(book.title === title) {
+            booksByTitle.push({
+                isbn: isbn,
+                author: book.author,
+                reviews: book.reviews
+            });
+        }
+    }
+
+    return res.status(200).json({booksbytitle: booksByTitle});
 });
 
 //  Get book review
