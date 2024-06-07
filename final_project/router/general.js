@@ -6,7 +6,7 @@ const public_users = express.Router();
 
 /*** PROMISES ***/
 
-// Retrieve all books from the database, as an asyncronous function
+// Retrieve all books from the database, asyncronously as a promise
 const getAllBooks = new Promise((resolve, reject) => {
 
     // Return all books if database is valid
@@ -20,7 +20,7 @@ const getAllBooks = new Promise((resolve, reject) => {
     
 });
 
-// Retrieve a book by ISBN from the database, as an asyncronous function
+// Retrieve a book by ISBN from the database, as an asyncronous promise function
 const getByISBN = (isbn) => new Promise( async (resolve, reject) => {
 
     // Call & await the Promise to get all books, to avoid blocking
@@ -40,7 +40,7 @@ const getByISBN = (isbn) => new Promise( async (resolve, reject) => {
     
 });
 
-// Retrieve a book by Author from the database, as an asyncronous function
+// Retrieve a book by Author from the database, as an asyncronous promise function
 const getByAuthor = (author) => new Promise( async (resolve, reject) => {
 
     try {
@@ -63,6 +63,37 @@ const getByAuthor = (author) => new Promise( async (resolve, reject) => {
 
         // Resolve with the array filtered by author
         resolve(booksByAuthor);
+    }
+    catch(error) {
+        // Reject if an error was encountered
+        reject(error);
+    }
+    
+});
+
+// Retrieve a book by Title from the database, as an asyncronous promise function
+const getByTitle = (title) => new Promise( async (resolve, reject) => {
+
+    try {
+        // Call & await the Promise to get all books, to avoid blocking
+        const allBooks = await getAllBooks;
+
+        // Construct an array with books filtered by title
+        let booksByTitle = [];
+        for (const [isbn, book] of Object.entries(allBooks)) {
+
+            // Add just the books with the requested title
+            if(book.title === title) {
+                booksByTitle.push({
+                    isbn: isbn,
+                    author: book.author,
+                    reviews: book.reviews
+                });
+            }
+        }
+
+        // Resolve with the array filtered by title
+        resolve(booksByTitle);
     }
     catch(error) {
         // Reject if an error was encountered
@@ -161,28 +192,24 @@ public_users.get('/author/:author', async function (req, res) {
 
 });
 
-// Get all books based on title
-public_users.get('/title/:title', function (req, res) {
+// Get all books based on title, asynchronously
+public_users.get('/title/:title', async function (req, res) {
   
     // Parse requested title
     const title = req.params.title;
 
-    // Array of books having the requested title
-    let booksByTitle = [];
+    try {
+        // Call & await the Promise to get books filtered by title, to avoid blocking
+        const booksByTitle = await getByTitle(title);
 
-    for (const [isbn, book] of Object.entries(books)) {
-
-        // Add just the books with the requested title
-        if(book.title === title) {
-            booksByTitle.push({
-                isbn: isbn,
-                author: book.author,
-                reviews: book.reviews
-            });
-        }
+        // Return books with matching title, once the Promise has resolved
+        return res.status(200).json({booksbytitle: booksByTitle});
+    }
+    catch(error) {
+        // Respond with a "500 Internal Server Error" if the Promise was rejected
+        return res.status(500).json({message: error});
     }
 
-    return res.status(200).json({booksbytitle: booksByTitle});
 });
 
 //  Get book review
