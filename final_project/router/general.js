@@ -40,6 +40,37 @@ const getByISBN = (isbn) => new Promise( async (resolve, reject) => {
     
 });
 
+// Retrieve a book by Author from the database, as an asyncronous function
+const getByAuthor = (author) => new Promise( async (resolve, reject) => {
+
+    try {
+        // Call & await the Promise to get all books, to avoid blocking
+        const allBooks = await getAllBooks;
+
+        // Construct an array with books filtered by author
+        let booksByAuthor = [];
+        for (const [isbn, book] of Object.entries(allBooks)) {
+
+            // Add just the books with the requested author
+            if(book.author === author) {
+                booksByAuthor.push({
+                    isbn: isbn,
+                    title: book.title,
+                    reviews: book.reviews
+                });
+            }
+        }
+
+        // Resolve with the array filtered by author
+        resolve(booksByAuthor);
+    }
+    catch(error) {
+        // Reject if an error was encountered
+        reject(error);
+    }
+    
+});
+
 /*** ROUTES ***/
 
 public_users.post("/register", (req,res) => {
@@ -97,7 +128,7 @@ public_users.get('/isbn/:isbn', async function (req, res) {
     const isbn = req.params.isbn;
 
     try {
-        // Call & await the Promise to get all books, to avoid blocking
+        // Call & await the Promise to get a book by ISBN, to avoid blocking
         const book = await getByISBN(isbn);
 
         // Return book with matching ISBN, once the Promise has resolved
@@ -110,32 +141,28 @@ public_users.get('/isbn/:isbn', async function (req, res) {
   
 });
 
-// Get book details based on author
-public_users.get('/author/:author',function (req, res) {
+// Get book details based on author, asynchronously
+public_users.get('/author/:author', async function (req, res) {
   
     // Parse requested author
     const author = req.params.author;
 
-    // Array of books having the requested author
-    let booksByAuthor = [];
+    try {
+        // Call & await the Promise to get books filtered by author, to avoid blocking
+        const booksByAuthor = await getByAuthor(author);
 
-    for (const [isbn, book] of Object.entries(books)) {
-
-        // Add just the books with the requested author
-        if(book.author === author) {
-            booksByAuthor.push({
-                isbn: isbn,
-                title: book.title,
-                reviews: book.reviews
-            });
-        }
+        // Return books with matching author, once the Promise has resolved
+        return res.status(200).json({booksbyauthor: booksByAuthor});
+    }
+    catch(error) {
+        // Respond with a "500 Internal Server Error" if the Promise was rejected
+        return res.status(500).json({message: error});
     }
 
-    return res.status(200).json({booksbyauthor: booksByAuthor});
 });
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
+public_users.get('/title/:title', function (req, res) {
   
     // Parse requested title
     const title = req.params.title;
